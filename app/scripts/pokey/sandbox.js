@@ -3,7 +3,7 @@ import Port from './port';
 
 //map sandbox.type to adapter name
 let typeToAdapterNameMap = {
-  html: 'iframe',
+  html  : 'iframe',
   iframe: 'iframe'
   //worker : 'worker' //todo in the future
 };
@@ -32,7 +32,6 @@ class Sandbox {
     this.envPortDefereds     = {};
     this.sandboxPortDefereds = {};
 
-    this.connections = {};
     //let other things listen in
     this.wiretaps     = [];
     this.channels     = {};

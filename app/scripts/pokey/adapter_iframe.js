@@ -106,7 +106,7 @@ class AdapterIFrame extends AdapterBase {
       //iFrame has loaded Pokey...
 
       if (verifyCurrentSandboxOrigin(sandbox, event)) {
-        //todo ---- transfer services to new iframe
+        sandbox.createAndTransferCapabilities();
       }
 
       if (sandbox.options.reconnect === "none") {
@@ -141,7 +141,6 @@ class AdapterIFrame extends AdapterBase {
     sandbox.el = null;
   }
 
-  //todo - move to static?
   connectPorts (sandbox, ports) {
     var rawPorts = ports.map((port) => port.port),
         message  = this.createInitializationMessage(sandbox);
@@ -149,7 +148,7 @@ class AdapterIFrame extends AdapterBase {
     if (sandbox.terminated) {
       return;
     }
-    window.postMessage(sandbox.el.contentWindow, message, '*', rawPorts);
+    sandbox.el.contentWindow.postMessage(message, '*', rawPorts);
   }
 
   /*
@@ -158,7 +157,7 @@ class AdapterIFrame extends AdapterBase {
    */
 
   connectSandbox (pokey) {
-    return BaseAdapter.prototype.connectSandbox.call(this, window, pokey);
+    return AdapterBase.prototype.connectSandbox.call(this, window, pokey);
   }
 
   pokeyLoaded () {
@@ -171,26 +170,25 @@ class AdapterIFrame extends AdapterBase {
 }
 
 function verifySandbox (pokey, sandboxUrl) {
-  var iframe = document.createElement('iframe'),
-      link;
+  let iframe = document.createElement('iframe');
 
   if ((pokey.configuration.allowSameOrigin && iframe.sandbox !== undefined) ||
     (iframe.sandbox === undefined)) {
     // The sandbox attribute isn't supported (IE8/9) or we want a child iframe
     // to access resources from its own domain (youtube iframe),
     // we need to make sure the sandbox is loaded from a separate domain
-    link      = document.createElement('a');
+    let link  = document.createElement('a');
     link.href = sandboxUrl;
 
     if (!link.host || (link.protocol === window.location.protocol && link.host === window.location.host)) {
       throw new Error("Security: iFrames from the same host cannot be sandboxed in older browsers and is disallowed. For HTML5 browsers supporting the `sandbox` attribute on iframes, you can add the `allow-same-origin` flag only if you host the sandbox on a separate domain.");
     }
   }
+
+  //iframe will be garbage collected
 }
 
 function verifyCurrentSandboxOrigin (sandbox, event) {
-  var linkOriginal, linkCurrent;
-
   if (sandbox.firstLoad || sandbox.options.reconnect === "any") {
     return true;
   }
@@ -198,8 +196,8 @@ function verifyCurrentSandboxOrigin (sandbox, event) {
   if (!sandbox.pokey.configuration.allowSameOrigin || event.origin === "null") {
     fail();
   } else {
-    linkOriginal = document.createElement('a');
-    linkCurrent  = document.createElement('a');
+    let linkOriginal = document.createElement('a'),
+        linkCurrent  = document.createElement('a');
 
     linkOriginal.href = sandbox.options.url;
     linkCurrent.href  = event.origin;

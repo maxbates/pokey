@@ -102,6 +102,8 @@ function scriptPipeline(entry, output) {
     .pipe($.sourcemaps.init({loadMaps: true}))
     .pipe($.sourcemaps.write('./'))
     .pipe(gulp.dest('./'));
+    //sourcemaps into browsersync
+    //.pipe(browserSync.stream({match: '**/*.css'}))
 }
 
 gulp.task('pokey', () => {

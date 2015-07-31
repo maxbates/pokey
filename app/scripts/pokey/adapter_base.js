@@ -1,7 +1,6 @@
 import Channel from './channel';
 import {mustImplement} from './utils';
 
-//todo - expose these
 const pokeyLoadedMessage        = "pokeySandboxLoaded";
 const sandboxInitializedMessage = "pokeySandboxInitialized";
 
@@ -25,7 +24,8 @@ class AdapterBase {
     });
   }
 
-  static createChannel (pokey) {
+  //inherited, not static
+  createChannel (pokey) {
     let channel = new Channel(pokey);
     channel.port1.start();
     return channel;
@@ -58,24 +58,34 @@ class AdapterBase {
     });
   }
 
-  static environmentPort (sandbox, channel) {
+  //inherited, not static
+  environmentPort (sandbox, channel) {
     return channel.port1;
   }
 
-  static sandboxPort (sandbox, channel) {
+  //inherited, not static
+  sandboxPort (sandbox, channel) {
     return channel.port2;
   }
 
-  static proxyPort (sandbox, port) {
+  //inherited, not static
+  proxyPort (sandbox, port) {
     return port;
   }
 
+  //inherited, not static
+  createInitializationMessage (sandbox) {
+    return {
+      isPokeyInitialization: true,
+      capabilities         : sandbox._capabilitiesToConnect
+    };
+  }
 }
 
-Object.assign(AdapterBase, {
-  initializeSandbox: mustImplement('AdapterBase', 'initializeSandbox'),
-  pokeyLoadedMessage : pokeyLoadedMessage,
-  sandboxInitializedMessage : sandboxInitializedMessage
+Object.assign(AdapterBase.prototype, {
+  initializeSandbox        : mustImplement('AdapterBase', 'initializeSandbox'),
+  pokeyLoadedMessage       : pokeyLoadedMessage,
+  sandboxInitializedMessage: sandboxInitializedMessage
 });
 
 //note - cannot assign readonly field 'name'

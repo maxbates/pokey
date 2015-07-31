@@ -73,7 +73,7 @@ export function connectCapabilities (capabilities, eventPorts) {
         port    = new Port(pokey, eventPorts[i]);
 
     if (handler) {
-      Deferred.resolve(handler.setupCapability(port)).
+      Promise.resolve(handler.setupCapability(port)).
         then(function () {
           port.start();
         }).
@@ -84,7 +84,7 @@ export function connectCapabilities (capabilities, eventPorts) {
   });
 
   // for each handler w/o capability, reject
-  for (var prop in pokey.handlers) {
+  for (let prop in pokey.handlers) {
     if (!pokey.ports[prop]) {
       pokey.handlers[prop].rejectCapability();
     }
@@ -138,7 +138,7 @@ function connectConsumers (pokey, consumers) {
     };
   }
 
-  for (let prop of consumers) {
+  for (let prop in consumers) {
     registerHandler(pokey, prop, {
       setupCapability : setupCapability(consumers[prop], prop),
       rejectCapability: rejectCapability(prop)

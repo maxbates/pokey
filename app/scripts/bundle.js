@@ -19,24 +19,24 @@ addLogStatement('initialized');
 var sandbox = pokey.createSandbox({
   url: 'http://127.0.0.1:3000/external.html',
   type: 'iframe',
-  capabilities: ['account'],
+  capabilities: ['basicChannel'],
   height: "500"
 });
 
-sandbox.connect('account').then(function (port) {
+sandbox.connect('basicChannel').then(function (port) {
   addLogStatement('connected on account');
 
-  port.onRequest('profile', function () {
+  port.onRequest('email', function () {
     return new Promise(function (resolve, reject) {
       setTimeout(function () {
         resolve({ email: 'maxbates@gmail.com' });
-      }, 1);
+      }, 2000);
     });
   });
 
   document.querySelector('#email-input').addEventListener('keyup', function (event) {
-    addLogStatement('sent');
-    port.request('setProfile', event.target.value);
+    addLogStatement('sending');
+    port.send('setEmail', event.target.value);
   });
 });
 

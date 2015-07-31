@@ -39,20 +39,20 @@ export class Deferred {
     defer(this);
   }
 
-  static resolve(deferred, value) {
+  static resolve (deferred, value) {
     deferred.resolve(value);
   }
 
-  static reject(deferred, value) {
+  static reject (deferred, value) {
     deferred.reject(value);
   }
 }
 
 //helper
-function defer(deferred) {
-  deferred.promise = new Promise(function(resolve, reject) {
+function defer (deferred) {
+  deferred.promise = new Promise(function (resolve, reject) {
     deferred.resolve = resolve;
-    deferred.reject = reject
+    deferred.reject  = reject
   });
   return deferred
 }

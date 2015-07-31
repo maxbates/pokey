@@ -21,7 +21,6 @@ class Channel {
     delete this.port2;
     delete this.channel;
   }
-
 }
 
-Channel.start = mustImplement('Channel', 'start');
+export default Channel;

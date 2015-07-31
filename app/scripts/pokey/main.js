@@ -73,6 +73,8 @@ export default Pokey;
 
 /****** auto initialization *****/
 
+//todo - encapsulate to allow multiple instances on page (should pass this into connectSandbox)
+
 window.pokey = global.pokey = new Pokey();
 
 /* in sandboxes, we want to automatically start things up to continue handshake process */
@@ -81,10 +83,12 @@ function autoInitializeSandbox () {
     //in the future, could handle inline workers here
 
     if (window.parent && window.parent !== window) {
-      pokey.adapters.iframe.connectSandbox(this);
+      pokey.adapters.iframe.connectSandbox(pokey);
     }
   } else {
     //handle web workers
-    pokey.adapters.webworker.connectSandbox(this);
+    pokey.adapters.webworker.connectSandbox(pokey);
   }
 }
+
+autoInitializeSandbox();
