@@ -60,16 +60,16 @@ export function registerHandler (pokey, capability, options) {
 }
 
 export function portFor (capability) {
-  var port = this.ports[capability];
+  let port = this.ports[capability];
   assert(port, "You asked for the port for the capability named '" + capability + ", but didn't have one");
   return port;
 }
 
 //todo - clean
 export function connectCapabilities (capabilities, eventPorts) {
-  var pokey = this;
+  let pokey = this;
   capabilities.forEach((capability, i) => {
-    var handler = pokey.handlers[capability],
+    let handler = pokey.handlers[capability],
         port    = new Port(pokey, eventPorts[i]);
 
     if (handler) {
@@ -83,7 +83,7 @@ export function connectCapabilities (capabilities, eventPorts) {
     pokey.ports[capability] = port;
   });
 
-  // for each handler w/o capability, reject
+  // for each handler without a capability, reject
   for (let prop in pokey.handlers) {
     if (!pokey.ports[prop]) {
       pokey.handlers[prop].rejectCapability();
@@ -94,7 +94,7 @@ export function connectCapabilities (capabilities, eventPorts) {
 }
 
 function connectPromise (pokey, capability) {
-  var deferred = new Deferred();
+  let deferred = new Deferred();
   registerHandler(pokey, capability, {
     promise         : deferred.promise,
     setupCapability : function (port) {
@@ -102,7 +102,7 @@ function connectPromise (pokey, capability) {
       return deferred.promise;
     },
     rejectCapability: function () {
-      deferred.reject();
+      deferred.reject('Capability ' + capability + ' rejected. Make sure it is registered.');
     }
   });
   return deferred.promise;
@@ -126,7 +126,7 @@ function connectCallbacks (pokey, capability, callback, errorCallback) {
 function connectConsumers (pokey, consumers) {
   function setupCapability (Consumer, name) {
     return function (port) {
-      var consumer          = new Consumer(port);
+      let consumer          = new Consumer(port);
       pokey.consumers[name] = consumer;
       consumer.initialize(port, name);
     };

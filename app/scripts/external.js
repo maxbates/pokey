@@ -16,16 +16,24 @@ addLogStatement('initialized');
  SANDBOXING
  **********/
 
-pokey.connect('basicChannel').then(function (port) {
+pokey.connect('colorChannel').then((port) => {
+  addLogStatement('connected on colorChannel');
 
-  addLogStatement('connected');
+  port.on('color', (color) => {
+    document.body.style.backgroundColor = color;
+  })
+});
 
-  port.request('email').then(function (profile) {
+pokey.connect('interaction').then((port) => {
+
+  addLogStatement('connected on interaction');
+
+  port.request('email').then((profile) => {
     addLogStatement('got email');
     document.querySelector("#email").textContent = profile.email;
   });
 
-  port.on('setEmail', function (info) {
+  port.on('setEmail', (info) => {
     addLogStatement('received');
     document.querySelector("#email").textContent = info;
   });

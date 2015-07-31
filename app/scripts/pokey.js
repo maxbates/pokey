@@ -781,7 +781,7 @@ function connectCapabilities(capabilities, eventPorts) {
     pokey.ports[capability] = port;
   });
 
-  // for each handler w/o capability, reject
+  // for each handler without a capability, reject
   for (var prop in pokey.handlers) {
     if (!pokey.ports[prop]) {
       pokey.handlers[prop].rejectCapability();
@@ -800,7 +800,7 @@ function connectPromise(pokey, capability) {
       return deferred.promise;
     },
     rejectCapability: function rejectCapability() {
-      deferred.reject();
+      deferred.reject('Capability ' + capability + ' rejected. Make sure it is registered.');
     }
   });
   return deferred.promise;
@@ -1265,8 +1265,8 @@ var Sandbox = (function () {
     //list of allowed capabilities
     this._capabilitiesToConnect = this._filterCapabilities(capabilities);
     //maps of port promises, keyed by capability
-    this.envPortDefereds = {};
-    this.sandboxPortDefereds = {};
+    this.envPortDeferreds = {};
+    this.sandboxPortDeferreds = {};
 
     //let other things listen in
     this.wiretaps = [];
@@ -1303,8 +1303,8 @@ var Sandbox = (function () {
       var _this = this;
 
       this._capabilitiesToConnect.forEach(function (capability) {
-        _this.envPortDefereds[capability] = new _utils.Deferred();
-        _this.sandboxPortDefereds[capability] = new _utils.Deferred();
+        _this.envPortDeferreds[capability] = new _utils.Deferred();
+        _this.sandboxPortDeferreds[capability] = new _utils.Deferred();
       });
     }
 
@@ -1373,11 +1373,11 @@ var Sandbox = (function () {
           // Law of Demeter violation...
           port = sandboxPort;
 
-          _this2.envPortDefereds[capability].resolve(environmentPort);
+          _this2.envPortDeferreds[capability].resolve(environmentPort);
         }
 
         //port created
-        _this2.sandboxPortDefereds[capability].resolve(port);
+        _this2.sandboxPortDeferreds[capability].resolve(port);
       }, sandbox);
     }
   }, {
@@ -1386,7 +1386,7 @@ var Sandbox = (function () {
       var sandbox = this;
 
       Promise.all(sandbox._capabilitiesToConnect.map(function (capability) {
-        return sandbox.sandboxPortDefereds[capability].promise;
+        return sandbox.sandboxPortDeferreds[capability].promise;
       })).then(function (ports) {
         //all ports created, transfer
         sandbox.adapter.connectPorts(sandbox, ports);
@@ -1416,11 +1416,10 @@ var Sandbox = (function () {
   }, {
     key: 'connect',
     value: function connect(capability) {
-      var portPromise = this.envPortDefereds[capability].promise;
+      var portDeferred = this.envPortDeferreds[capability] || {},
+          portPromise = portDeferred.promise;
 
-      (0, _utils.assert)(portPromise, "Connect was called on '" + capability + "' but no such capability was registered.");
-
-      return portPromise;
+      return portPromise || Promise.reject("Connect was called on '" + capability + "' but no such capability was registered.");
     }
   }, {
     key: 'start',

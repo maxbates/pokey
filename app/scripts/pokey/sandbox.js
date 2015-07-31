@@ -29,8 +29,8 @@ class Sandbox {
     //list of allowed capabilities
     this._capabilitiesToConnect = this._filterCapabilities(capabilities);
     //maps of port promises, keyed by capability
-    this.envPortDefereds     = {};
-    this.sandboxPortDefereds = {};
+    this.envPortDeferreds     = {};
+    this.sandboxPortDeferreds = {};
 
     //let other things listen in
     this.wiretaps     = [];
@@ -62,8 +62,8 @@ class Sandbox {
 
   promisePorts () {
     this._capabilitiesToConnect.forEach((capability) => {
-      this.envPortDefereds[capability]     = new Deferred();
-      this.sandboxPortDefereds[capability] = new Deferred();
+      this.envPortDeferreds[capability]     = new Deferred();
+      this.sandboxPortDeferreds[capability] = new Deferred();
     });
   }
 
@@ -129,11 +129,11 @@ class Sandbox {
         // Law of Demeter violation...
         port = sandboxPort;
 
-        this.envPortDefereds[capability].resolve(environmentPort);
+        this.envPortDeferreds[capability].resolve(environmentPort);
       }
 
       //port created
-      this.sandboxPortDefereds[capability].resolve(port);
+      this.sandboxPortDeferreds[capability].resolve(port);
 
     }, sandbox);
   }
@@ -142,7 +142,7 @@ class Sandbox {
     let sandbox = this;
 
     Promise.all(sandbox._capabilitiesToConnect.map(
-      (capability) => sandbox.sandboxPortDefereds[capability].promise
+      (capability) => sandbox.sandboxPortDeferreds[capability].promise
     ))
       .then((ports) => {
         //all ports created, transfer
@@ -167,11 +167,10 @@ class Sandbox {
   }
 
   connect (capability) {
-    let portPromise = this.envPortDefereds[capability].promise;
+    let portDeferred = this.envPortDeferreds[capability] || {},
+        portPromise = portDeferred.promise;
 
-    assert(portPromise, "Connect was called on '" + capability + "' but no such capability was registered.");
-
-    return portPromise;
+    return portPromise || Promise.reject("Connect was called on '" + capability + "' but no such capability was registered.");
   }
 
   start (options) {

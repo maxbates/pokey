@@ -19,12 +19,18 @@ addLogStatement('initialized');
 var sandbox = pokey.createSandbox({
   url: 'http://127.0.0.1:3000/external.html',
   type: 'iframe',
-  capabilities: ['basicChannel'],
+  capabilities: ['interaction', 'colorChannel'],
   height: "500"
 });
 
-sandbox.connect('basicChannel').then(function (port) {
-  addLogStatement('connected on account');
+sandbox.connect('colorChannel').then(function (port) {
+  addLogStatement('connected on colorChannel');
+
+  port.send('color', '#' + (Math.random() * (1 << 24) | 0).toString(16).slice(-6));
+});
+
+sandbox.connect('interaction').then(function (port) {
+  addLogStatement('connected on interaction');
 
   port.onRequest('email', function () {
     return new Promise(function (resolve, reject) {
