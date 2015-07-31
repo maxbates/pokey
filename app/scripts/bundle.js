@@ -45,4 +45,4 @@ document.getElementById('insertion').appendChild(sandbox.el);
 },{}]},{},[1])
 
 
-//# sourceMappingURL=../app/bundle.js.map
+//# sourceMappingURL=../../app/scripts/bundle.js.map

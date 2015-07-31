@@ -1,9 +1,5 @@
 'use strict';
 
-import Pokey from './pokey/main';
-
-////////////////////
-
 let log = document.querySelector('#log');
 
 function addLogStatement (statement) {
@@ -15,16 +11,15 @@ function addLogStatement (statement) {
 
 addLogStatement('initialized');
 
-
 /**********
- OASIS
+ SANDBOXING
  **********/
 
-var sandbox = oasis.createSandbox({
+var sandbox = pokey.createSandbox({
   url         : 'http://127.0.0.1:3000/external.html',
-  type        : 'html',
+  type        : 'iframe',
   capabilities: ['account'],
-  height: "600"
+  height: "500"
 });
 
 sandbox.connect('account').then(function (port) {
@@ -33,7 +28,7 @@ sandbox.connect('account').then(function (port) {
   port.onRequest('profile', function () {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
-        resolve({email: 'wycats@gmail.com'});
+        resolve({email: 'maxbates@gmail.com'});
       }, 1);
     });
   });

@@ -34,29 +34,50 @@ class Service {
     }
   }
 
+  /**
+   This hook is called when the connection is established. When
+   `initialize` is called, it is safe to register listeners and
+   send data to the other side.
+
+   The implementation of Oasis makes it impossible for messages
+   to get dropped on the floor due to timing issues.
+
+   @param {OasisPort} port the port to the other side of the connection
+   @param {String} name the name of the service
+   */
   initialize() {}
 
+  /**
+   This hooks is called when an attempt is made to connect to a capability the
+   environment does not provide.
+   */
   error() {}
 
+  /**
+   This hook is called when the connection is stopped. When
+   `destroy` is called, it is safe to unregister listeners.
+   */
   destroy() {}
 
   /**
-   *
+   * send events to the other side of the
+   connection
    * @param {String} eventName
    * @param {Structured} data
    * @returns {*}
-   * //todo - ensure this binding
+   * //verify this binding
    */
   send(...args) {
     return this.port.send(...args);
   }
 
   /**
-   *
+   * request data from the other side of
+   the connection
    * @param {String} requestName
    * @param {Promise} promise resolved by other end
    * @returns {*}
-   * //todo - ensure this binding
+   * //verify this binding
    */
   request(...args) {
     return this.port.request(...args);

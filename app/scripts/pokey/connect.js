@@ -1,38 +1,147 @@
-import {assert} from './utils';
+import {assert, Deferred} from './utils';
+import Port from './Port';
 
-//can just pass string (get promise), string and callback (callback), or object with named consumers
-export function connect(serviceName, callback) {
-  if (typeof serviceName === 'object') {
-    return connectConsumers(this, serviceName);
+//todo - refactor away from this weird setupCapability and rejectCapability thing. Maybe get rid of callbacks.
+
+/**
+ * main entry point that allows sandboxes to connect back to their containing environment.
+ * can just pass string (get promise), string and callback (callback), or object with named consumers.
+ * @example
+ // Using promises
+ Oasis.connect('foo').then( function (port) {
+      port.send('hello');
+    }, function () {
+      // error
+    });
+
+ * @example
+ // using callbacks
+ Oasis.connect('foo', function (port) {
+      port.send('hello');
+    }, errorHandler);
+ *
+ * @param {String} capability the name of the service to connect to, or an object containing named consumers to connect.
+ * @param {Function?} callback the callback to trigger once the other side of the connection is available.
+ * @param {Function?} errorCallback the callback to trigger if there is an error.
+ * @return {Promise} a promise that will be resolved once the other side of the connection is available. You can use this instead of the callbacks.
+ */
+
+export function connect (capability, callback, errorCallback) {
+  if (typeof capability === 'object') {
+    return connectConsumers(this, capability);
   } else if (callback) {
-    return connectCallbacks(this, serviceName, callback);
+    return connectCallbacks(this, capability, callback, errorCallback);
   } else {
-    return connectPromise(this, serviceName);
+    return connectPromise(this, capability);
   }
 }
 
-export function registerHandler (pokey, serviceName, options) {
-  let port = pokey.ports[serviceName];
+export function registerHandler (pokey, capability, options) {
+  let port = pokey.ports[capability];
 
   if (port) {
-    //todo
+    //found port, set up capability
+    options.setupCapability(port);
+
+    if (options.promise) {
+      options.promise.
+        then(port.start).
+        catch(() => {});
+    } else {
+      port.start();
+    }
+  } else if (!pokey.receivedPorts) {
+    //no ports found, save handler for capability
+    pokey.handlers[capability] = options;
+  } else {
+    //no port sent for capability...
+    options.rejectCapability();
   }
 }
 
-export function portFor(serviceName) {
-  var port = this.ports[serviceName];
-  assert(port, "You asked for the port for the service named '" + serviceName + ", but the environment did not provide one.");
+export function portFor (capability) {
+  var port = this.ports[capability];
+  assert(port, "You asked for the port for the capability named '" + capability + ", but didn't have one");
   return port;
 }
 
-function connectPromise (pokey, serviceName) {
-  //todo
+//todo - clean
+export function connectCapabilities (capabilities, eventPorts) {
+  var pokey = this;
+  capabilities.forEach((capability, i) => {
+    var handler = pokey.handlers[capability],
+        port    = new Port(pokey, eventPorts[i]);
+
+    if (handler) {
+      Deferred.resolve(handler.setupCapability(port)).
+        then(function () {
+          port.start();
+        }).
+        catch(() => {})
+    }
+
+    pokey.ports[capability] = port;
+  });
+
+  // for each handler w/o capability, reject
+  for (var prop in pokey.handlers) {
+    if (!pokey.ports[prop]) {
+      pokey.handlers[prop].rejectCapability();
+    }
+  }
+
+  this.receivedPorts = true;
 }
 
-function connectCallbacks (pokey, serviceName, callback) {
-  //todo
+function connectPromise (pokey, capability) {
+  var deferred = new Deferred();
+  registerHandler(pokey, capability, {
+    promise         : deferred.promise,
+    setupCapability : function (port) {
+      deferred.resolve(port);
+      return deferred.promise;
+    },
+    rejectCapability: function () {
+      deferred.reject();
+    }
+  });
+  return deferred.promise;
 }
 
-function connectConsumers (pokey, consumerMap) {
-  //todo
+function connectCallbacks (pokey, capability, callback, errorCallback) {
+  registerHandler(pokey, capability, {
+    setupCapability : function (port) {
+      callback(port);
+    },
+    rejectCapability: function () {
+      if (errorCallback) {
+        errorCallback();
+      }
+    }
+  });
+}
+
+//todo - clean
+//todo - verify this works
+function connectConsumers (pokey, consumers) {
+  function setupCapability (Consumer, name) {
+    return function (port) {
+      var consumer          = new Consumer(port);
+      pokey.consumers[name] = consumer;
+      consumer.initialize(port, name);
+    };
+  }
+
+  function rejectCapability (prop) {
+    return function () {
+      consumers[prop].prototype.error();
+    };
+  }
+
+  for (let prop of consumers) {
+    registerHandler(pokey, prop, {
+      setupCapability : setupCapability(consumers[prop], prop),
+      rejectCapability: rejectCapability(prop)
+    });
+  }
 }

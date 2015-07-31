@@ -1,12 +1,12 @@
 import Service from './service';
 import Sandbox from './sandbox';
-import Events from './events';
-import { connect, portFor } from './connect';
+import { connect, portFor, connectCapabilities } from './connect';
 
 import AdapterIFrame from './adapter_iframe';
 
 class Pokey {
-  constructor () {
+  constructor (options) {
+
     this.pokeyId   = 'pokey' + (+new Date());
     this.requestId = 0;
 
@@ -18,46 +18,73 @@ class Pokey {
 
     this.receivedPorts = false;
 
-    this.configuration = {
-      eventCallback  : (callback) => { return callback() },
-      allowSameOrigin: false,
-      reconnect      : 'verify' //todo - allow setting to 'none, 'any'
-    };
+    //default configuration
+    this.configuration = Object.assign({
 
-    this.events = new Events();
+      //allow proxying of event callbacks
+      eventCallback: (callback) => { return callback() },
+
+      //security - allowSameOrigin on iFrames
+      allowSameOrigin: false,
+
+      //security - allow reconnections on iframe navigation?
+      reconnect: 'verify'
+
+    }, options);
+
+    this.adapters = {
+      iframe: new AdapterIFrame()
+
+      //in a future version...
+      //webworker: new WebworkerAdapter(),
+      //inline: new InlineAdapter()
+    };
 
     this.onCreate();
   }
 
-  //noop for now
+  //noop for now, but can be extended
   onCreate () {}
 
   /**
    * entry point for containing environment to create child sandbox
    * @param options with fields
-   * services
+   * capabilities
    * url - url for JS file that will initialize sandbox in sandboxed environment
-   * //todo - multiple types - iframe, workers
+   * type - currently, only support 'iframe' (default)
    */
   createSandbox (options) {
     return new Sandbox(this, options);
   }
 
+  configure (params) {
+    return Object.assign(this.configuration, params);
+  }
 }
 
-Object.assign(Pokey, {
-
-  connect: connect,
-
-  portFor : portFor,
-
-  adapters : {
-    iframe: new AdapterIFrame()
-
-    //in a future version...
-    //webworker: new WebworkerAdapter(),
-    //inline: new InlineAdapter()
-  }
+Object.assign(Pokey.prototype, {
+  connect            : connect,
+  connectCapabilities: connectCapabilities,
+  portFor            : portFor
 });
 
 export default Pokey;
+
+
+/****** auto initialization *****/
+
+window.pokey = global.pokey = new Pokey();
+
+/* in sandboxes, we want to automatically start things up to continue handshake process */
+function autoInitializeSandbox () {
+  if (typeof window !== 'undefined') {
+    //in the future, could handle inline workers here
+
+    if (window.parent && window.parent !== window) {
+      pokey.adapters.iframe.connectSandbox(this);
+    }
+  } else {
+    //handle web workers
+    pokey.adapters.webworker.connectSandbox(this);
+  }
+}

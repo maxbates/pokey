@@ -85,9 +85,8 @@ gulp.task('fonts', () => {
     .pipe(gulp.dest('dist/fonts'));
 });
 
-gulp.task('scripts', () => {
-
-  return browserify('app/scripts/main.js', {
+function scriptPipeline(entry, output) {
+  return browserify(entry, {
     debug: true
   })
     .on('error', function (err) {
@@ -98,11 +97,19 @@ gulp.task('scripts', () => {
     .on('error', function (err) {
       console.log(err);
     })
-    .pipe(source('app/bundle.js'))
+    .pipe(source(output))
     .pipe(buffer())
     .pipe($.sourcemaps.init({loadMaps: true}))
     .pipe($.sourcemaps.write('./'))
     .pipe(gulp.dest('./'));
+}
+
+gulp.task('pokey', () => {
+  return scriptPipeline('app/scripts/pokey/main.js', 'app/scripts/pokey.js');
+});
+
+gulp.task('scripts', () => {
+  return scriptPipeline('app/scripts/main.js', 'app/scripts/bundle.js');
 });
 
 gulp.task('extras', () => {
@@ -116,7 +123,7 @@ gulp.task('extras', () => {
 
 gulp.task('clean', del.bind(null, ['.tmp', 'dist']));
 
-gulp.task('serve', ['styles', 'fonts', 'scripts'], () => {
+gulp.task('serve', ['styles', 'fonts', 'pokey', 'scripts'], () => {
   browserSync({
     notify: false,
     port  : 9000,
@@ -131,12 +138,14 @@ gulp.task('serve', ['styles', 'fonts', 'scripts'], () => {
 
   gulp.watch([
     'app/*.html',
-    'app/bundle.js',
+    'app/scripts/pokey.js',
+    'app/scripts/bundle.js',
     'app/images/**/*',
     '.tmp/fonts/**/*'
   ]).on('change', reload);
 
-  gulp.watch('app/scripts/**/*', ['scripts']);
+  gulp.watch('app/scripts/pokey/**/*', ['pokey']);
+  gulp.watch('app/scripts/*.js', ['scripts']);
   gulp.watch('app/styles/**/*.scss', ['styles']);
   gulp.watch('app/fonts/**/*', ['fonts']);
   gulp.watch('bower.json', ['wiredep', 'fonts']);

@@ -1,3 +1,4 @@
+import {UUID} from './utils';
 import AdapterBase from './adapter_base';
 
 class AdapterIFrame extends AdapterBase {
@@ -9,16 +10,27 @@ class AdapterIFrame extends AdapterBase {
     return sandbox.el.name;
   }
 
-  initializeSandbox (sandbox) {
-    //todo
+  /*
+  Environment
+  Methods called by the hosting environment
+   */
 
+  /**
+   * For the iFrame, we:
+   * (1) create the iFrame, and register it on sandbox.el
+   * (2) set up listeners for handshake (see handshake doc)
+   * @param sandbox
+   */
+  initializeSandbox (sandbox) {
     let options           = sandbox.options,
         iframe            = document.createElement('iframe'),
-        sandboxAttributes = ['allow-scripts']; //can allow more...
+        sandboxAttributes = ['allow-scripts']; //todo - can allow more...
 
-    iframe.name    = sandbox.options.url + '?uuid=' + UUID.generate();
-    iframe.sandbox = sandboxAttributes.join(' ');
+    iframe.name     = sandbox.options.url + '?uuid=' + UUID();
+    iframe.sandbox  = sandboxAttributes.join(' ');
+    iframe.seamless = true;
 
+    //todo - make options more explicit, give own object?
     // rendering-specific code
     if (options.width) {
       iframe.width = options.width;
@@ -51,7 +63,7 @@ class AdapterIFrame extends AdapterBase {
     iframe.src          = sandbox.options.url;
 
     // Promise that sandbox has loaded and services connected at least once. This does not mean that the sandbox will be loaded & connected in the face of reconnects (eg pages that navigate)
-    sandbox._waitForLoadPromise.resolve(new Promise(function (resolve, reject) {
+    sandbox.loadDeferred.resolve(new Promise(function (resolve, reject) {
       iframe.initializationHandler = function (event) {
         if (event.data !== sandbox.adapter.sandboxInitializedMessage) {
           return;
@@ -76,8 +88,8 @@ class AdapterIFrame extends AdapterBase {
 
     sandbox.el = iframe;
 
-    iframe.oasisLoadHandler = function (event) {
-      if (event.data !== sandbox.adapter.oasisLoadedMessage) {
+    iframe.pokeyLoadHandler = function (event) {
+      if (event.data !== sandbox.adapter.pokeyLoadedMessage) {
         return;
       }
       try {
@@ -98,23 +110,63 @@ class AdapterIFrame extends AdapterBase {
       }
 
       if (sandbox.options.reconnect === "none") {
-        window.removeEventListener('message', iframe.oasisLoadHandler);
+        window.removeEventListener('message', iframe.pokeyLoadHandler);
       }
     };
-    window.addEventListener('message', iframe.oasisLoadHandler);
+    window.addEventListener('message', iframe.pokeyLoadHandler);
   }
 
-  terminateSandbox () {
-
+  //generally, you want to attach the iFrame yourself, because when moved in the DOM, the iFrame is reloaded
+  static startSandbox (sandbox, options) {
+    var head = document.head || document.documentElement.getElementsByTagName('head')[0];
+    head.appendChild(sandbox.el);
   }
 
-  connectPorts () {
+  static terminateSandbox (sandbox) {
+    var el = sandbox.el;
 
+    sandbox.terminated = true;
+
+    if (el.loadHandler) {
+      // no load handler for HTML sandboxes
+      el.removeEventListener('load', el.loadHandler);
+    }
+    window.removeEventListener('message', el.initializationHandler);
+    window.removeEventListener('message', el.pokeyLoadHandler);
+
+    if (el.parentNode) {
+      el.parentNode.removeChild(el);
+    }
+
+    sandbox.el = null;
   }
+
+  //todo - move to static?
+  connectPorts (sandbox, ports) {
+    var rawPorts = ports.map((port) => port.port),
+        message  = this.createInitializationMessage(sandbox);
+
+    if (sandbox.terminated) {
+      return;
+    }
+    window.postMessage(sandbox.el.contentWindow, message, '*', rawPorts);
+  }
+
+  /*
+  Sandbox API
+  These methods are called from the sandbox, not the hosting environment
+   */
 
   connectSandbox (pokey) {
-    //todo - make static method
-    AdapterBase.prototype.connectSandbox.call(this, window, pokey);
+    return BaseAdapter.prototype.connectSandbox.call(this, window, pokey);
+  }
+
+  pokeyLoaded () {
+    window.parent.postMessage(this.pokeyLoadedMessage, '*', []);
+  }
+
+  didConnect () {
+    window.parent.postMessage(this.sandboxInitializedMessage, '*', []);
   }
 }
 
@@ -134,8 +186,6 @@ function verifySandbox (pokey, sandboxUrl) {
       throw new Error("Security: iFrames from the same host cannot be sandboxed in older browsers and is disallowed. For HTML5 browsers supporting the `sandbox` attribute on iframes, you can add the `allow-same-origin` flag only if you host the sandbox on a separate domain.");
     }
   }
-
-
 }
 
 function verifyCurrentSandboxOrigin (sandbox, event) {

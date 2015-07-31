@@ -13,10 +13,10 @@ addLogStatement('initialized');
 
 
 /**********
- OASIS
+ SANDBOXING
  **********/
 
-oasis.connect('account').then(function (port) {
+pokey.connect('account').then(function (port) {
 
   addLogStatement('connected');
 

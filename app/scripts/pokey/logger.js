@@ -1,24 +1,25 @@
-function Logger () {
-  this.enabled = false;
-}
+//todo - use this?
 
-Logger.prototype = {
-  enable: () => {
-    this.enabled = true;
-  },
-
-  disable: () => {
+class Logger {
+  constructor () {
     this.enabled = false;
-  },
+  }
 
-  log: function () {
+  enable () {
+    this.enabled = true;
+  }
+
+  disable () {
+    this.enabled = false;
+  }
+
+  log () {
     var logger = this;
     if (logger.enabled) {
       console.log.apply(console, arguments);
     }
   }
-};
-
+}
 var logger = new Logger();
 
 export default logger;
