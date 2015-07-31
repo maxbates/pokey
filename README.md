@@ -19,6 +19,12 @@ A page should open with an example.
 
 Look at app/main.js and app/external.js and app/index.html and app/external.html respectively
 
+### todo
+
+- make events + payloads more consistent. document.
+
+- worker adapter
+
 ### MORE EXAMPLES FORTHCOMING
 
 inspired by oasis.js, with some changes + moved to ES6 

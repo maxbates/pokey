@@ -9,8 +9,6 @@ var _createClass = (function () { function defineProperties(target, props) { for
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
-var _utils = require('./utils');
-
 var Port = (function () {
   function Port(pokey, port) {
     _classCallCheck(this, Port);
@@ -239,7 +237,7 @@ function getRequestId(pokey) {
 exports['default'] = Port;
 module.exports = exports['default'];
 
-},{"./utils":10}],2:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -265,6 +263,7 @@ var AdapterBase = (function () {
   function AdapterBase() {
     _classCallCheck(this, AdapterBase);
 
+    //add unsupported capabilities e.g. to prevent capabilities from being registered
     this._unsupportedCapabilities = [];
   }
 
@@ -415,7 +414,10 @@ var AdapterIFrame = (function (_AdapterBase) {
     /**
      * For the iFrame, we:
      * (1) create the iFrame, and register it on sandbox.el
-     * (2) set up listeners for handshake (see handshake doc)
+     * (2) set up listeners:
+     *    (1) error handler
+     *    (2) loaded event for handshake (see handshake doc)
+     *    (3) initialize event
      * @param sandbox
      */
     value: function initializeSandbox(sandbox) {
@@ -891,6 +893,7 @@ var Pokey = (function () {
     this.configuration = Object.assign({
 
       //allow proxying of event callbacks
+      //includes load/connect events, + channel events 'on' and 'all'
       eventCallback: function eventCallback(callback) {
         return callback();
       },
@@ -985,8 +988,6 @@ Object.defineProperty(exports, '__esModule', {
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-var _utils = require('./utils');
 
 var Port = (function () {
   function Port(pokey, port) {
@@ -1216,7 +1217,7 @@ function getRequestId(pokey) {
 exports['default'] = Port;
 module.exports = exports['default'];
 
-},{"./utils":10}],8:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {

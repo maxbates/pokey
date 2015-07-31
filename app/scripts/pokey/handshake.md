@@ -5,7 +5,7 @@ pokey.sandbox()
 	sandbox.promisePorts()
 	sandbox.adapter.initializeSandbox()
 		<create iFrame + verify>
-		sandbox.waitForLoadDeferred().resolve(... <promise is just a hook>
+		sandbox.loadDeferred.resolve(... <promise is just a hook>
 			<register> adapter.initializationHandler
 				<on trigger>
 				sandbox.waitForLoadDeferred.resolve() <resolve load promise>
@@ -22,7 +22,7 @@ pokey.sandbox()
 
 
 autoInitializeSandbox()
-	<iFrame and Worker only>
+	<only runs in iFrame (and Worker)>
 	adapter.connectSandbox()
 		addEventListener('message', adapterBase.initializePokeySandbox)
 			<async, on <initializationMessage> which sends ports>

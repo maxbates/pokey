@@ -22,7 +22,8 @@ class Pokey {
     this.configuration = Object.assign({
 
       //allow proxying of event callbacks
-      eventCallback: (callback) => { return callback() },
+      //includes load/connect events, + channel events 'on' and 'all'
+      eventCallback: (callback) => { return callback(); },
 
       //security - allowSameOrigin on iFrames
       allowSameOrigin: false,

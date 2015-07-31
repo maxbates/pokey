@@ -1,5 +1,3 @@
-import {noop, mustImplement} from './utils';
-
 class Port {
   constructor (pokey, port) {
     this.pokey = pokey;
@@ -19,7 +17,7 @@ class Port {
 
     function wrappedCallback (event) {
       if (event.data.type === eventName) {
-        pokey.configuration.eventCallback(function () {
+        pokey.configuration.eventCallback(() => {
           return callback.call(binding, event.data.data);
         });
       }
@@ -35,7 +33,7 @@ class Port {
     let pokey = this.pokey;
 
     function wrappedCallback (event) {
-      pokey.configuration.eventCallback(function () {
+      pokey.configuration.eventCallback(() => {
         callback.call(binding, event.data.type, event.data.data);
       });
     }
@@ -113,7 +111,7 @@ class Port {
     let port = this;
     let args = [].slice.call(arguments, 1);
 
-    return new Promise(function (resolve, reject) {
+    return new Promise ((resolve, reject) => {
       let requestId = getRequestId(pokey);
 
       let clearObservers = () => {
@@ -177,7 +175,7 @@ class Port {
     this.on('@request:' + eventName, (data) => {
       let requestId = data.requestId,
           args = data.args,
-          getResponse = new Promise(function (resolve, reject) {
+          getResponse = new Promise((resolve, reject) => {
             var value = callback.apply(binding, args);
             if (undefined !== value) {
               resolve(value);

@@ -18,7 +18,10 @@ class AdapterIFrame extends AdapterBase {
   /**
    * For the iFrame, we:
    * (1) create the iFrame, and register it on sandbox.el
-   * (2) set up listeners for handshake (see handshake doc)
+   * (2) set up listeners:
+   *    (1) error handler
+   *    (2) loaded event for handshake (see handshake doc)
+   *    (3) initialize event
    * @param sandbox
    */
   initializeSandbox (sandbox) {

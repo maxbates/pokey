@@ -46,6 +46,7 @@ sandbox.connect('interaction').then(function (port) {
   });
 });
 
+//inserting in the DOM actually gets the iFrame going + loads external Pokey client to being handshake
 document.getElementById('insertion').appendChild(sandbox.el);
 
 },{}]},{},[1])

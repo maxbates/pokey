@@ -6,6 +6,7 @@ const sandboxInitializedMessage = "pokeySandboxInitialized";
 
 class AdapterBase {
   constructor () {
+    //add unsupported capabilities e.g. to prevent capabilities from being registered
     this._unsupportedCapabilities = [];
   }
 
@@ -84,8 +85,8 @@ class AdapterBase {
 
 Object.assign(AdapterBase.prototype, {
   initializeSandbox        : mustImplement('AdapterBase', 'initializeSandbox'),
-  pokeyLoadedMessage       : pokeyLoadedMessage,
-  sandboxInitializedMessage: sandboxInitializedMessage
+  pokeyLoadedMessage,
+  sandboxInitializedMessage
 });
 
 //note - cannot assign readonly field 'name'
