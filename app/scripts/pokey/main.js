@@ -14,9 +14,11 @@ class Pokey {
     this.consumers = {};
     this.services  = [];
 
+    //event handling
     this.ports    = {};
     this.handlers = {};
 
+    //state, aids handling of registering callbacks (e.g. whether to setup or wait for port to resolve) -- see connect/registerHandler
     this.receivedPorts = false;
 
     //default configuration
@@ -34,6 +36,7 @@ class Pokey {
 
     }, options);
 
+    //adapters are used to orchestrate communication between specific types of sandboxes
     this.adapters = {
       iframe: new AdapterIFrame(),
       worker: new AdapterWorker()
@@ -42,6 +45,7 @@ class Pokey {
       //inline: new AdapterInline()
     };
 
+    //init handler
     this.onCreate();
   }
 
@@ -59,6 +63,11 @@ class Pokey {
     return new Sandbox(this, options);
   }
 
+  /**
+   * Configure the Pokey object
+   * @param {Object} params
+   * @returns {*} configuration
+   */
   configure (params) {
     return Object.assign(this.configuration, params);
   }

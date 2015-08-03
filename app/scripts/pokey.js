@@ -1061,9 +1061,11 @@ var Pokey = (function () {
     this.consumers = {};
     this.services = [];
 
+    //event handling
     this.ports = {};
     this.handlers = {};
 
+    //state, aids handling of registering callbacks (e.g. whether to setup or wait for port to resolve) -- see connect/registerHandler
     this.receivedPorts = false;
 
     //default configuration
@@ -1083,6 +1085,7 @@ var Pokey = (function () {
 
     }, options);
 
+    //adapters are used to orchestrate communication between specific types of sandboxes
     this.adapters = {
       iframe: new _adapter_iframe2['default'](),
       worker: new _adapter_worker2['default']()
@@ -1091,6 +1094,7 @@ var Pokey = (function () {
       //inline: new AdapterInline()
     };
 
+    //init handler
     this.onCreate();
   }
 
@@ -1112,6 +1116,12 @@ var Pokey = (function () {
     value: function createSandbox(options) {
       return new _sandbox2['default'](this, options);
     }
+
+    /**
+     * Configure the Pokey object
+     * @param {Object} params
+     * @returns {*} configuration
+     */
   }, {
     key: 'configure',
     value: function configure(params) {

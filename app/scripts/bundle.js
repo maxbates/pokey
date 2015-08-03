@@ -12,6 +12,8 @@ function addLogStatement(statement) {
 
 addLogStatement('initialized');
 
+var myColor = '#' + (Math.random() * (1 << 24) | 0).toString(16).slice(-6);
+
 /**********
  SANDBOXING
  **********/
@@ -28,7 +30,7 @@ var sandbox = pokey.createSandbox({
 sandbox.connect('colorChannel').then(function (port) {
   addLogStatement('connected on colorChannel');
 
-  port.send('color', '#' + (Math.random() * (1 << 24) | 0).toString(16).slice(-6));
+  port.send('color', myColor);
 });
 
 sandbox.connect('interaction').then(function (port) {
@@ -59,8 +61,15 @@ var workerSandbox = pokey.createSandbox({
   capabilities: ['colorChannel']
 });
 
+workerSandbox.wiretap(function (channel, payload) {
+  console.log('worker wiretap', channel, payload);
+});
+
 workerSandbox.connect('colorChannel').then(function (port) {
-  port.send('workerColor', '#FF66FF');
+  port.send('workerColor', myColor);
+  port.request('workerMessage').then(function (msg) {
+    console.log('worker message received: ' + msg);
+  });
 });
 
 },{}]},{},[1])

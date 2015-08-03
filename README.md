@@ -23,11 +23,7 @@ Look at app/main.js and app/external.js and app/index.html and app/external.html
 
 - make events + payloads more consistent. document.
 
-- worker adapter
-
 - doc services, example
-
-- wiretap example
 
 ### MORE EXAMPLES FORTHCOMING
 

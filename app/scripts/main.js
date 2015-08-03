@@ -60,6 +60,13 @@ let workerSandbox = pokey.createSandbox({
   capabilities: ['colorChannel']
 });
 
+workerSandbox.wiretap((channel, payload) => {
+  console.log('worker wiretap', channel, payload);
+});
+
 workerSandbox.connect('colorChannel').then((port) => {
   port.send('workerColor', myColor);
+  port.request('workerMessage').then((msg) => {
+    console.log('worker message received: ' + msg);
+  })
 });
