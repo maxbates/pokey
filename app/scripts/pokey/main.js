@@ -2,6 +2,7 @@ import Service from './service';
 import Sandbox from './sandbox';
 import { connect, portFor, connectCapabilities } from './connect';
 
+import AdapterWorker from './adapter_worker';
 import AdapterIFrame from './adapter_iframe';
 
 class Pokey {
@@ -34,17 +35,17 @@ class Pokey {
     }, options);
 
     this.adapters = {
-      iframe: new AdapterIFrame()
+      iframe: new AdapterIFrame(),
+      worker: new AdapterWorker()
 
-      //in a future version...
-      //webworker: new WebworkerAdapter(),
-      //inline: new InlineAdapter()
+      //in a future version maybe ... inline not secure though
+      //inline: new AdapterInline()
     };
 
     this.onCreate();
   }
 
-  //noop for now, but can be extended
+  //noop for now, can be extended
   onCreate () {}
 
   /**
@@ -74,21 +75,25 @@ export default Pokey;
 
 /****** auto initialization *****/
 
-//todo - encapsulate to allow multiple instances on page (should pass this into connectSandbox)
-
-window.pokey = global.pokey = new Pokey();
-
 /* in sandboxes, we want to automatically start things up to continue handshake process */
 function autoInitializeSandbox () {
   if (typeof window !== 'undefined') {
+
+    //expose on window
+    //todo - encapsulate to allow multiple instances on page (should pass this into connectSandbox)
+    window.pokey = global.pokey = new Pokey();
+
     //in the future, could handle inline workers here
 
     if (window.parent && window.parent !== window) {
       pokey.adapters.iframe.connectSandbox(pokey);
     }
   } else {
+
+    self.pokey = new Pokey();
+
     //handle web workers
-    pokey.adapters.webworker.connectSandbox(pokey);
+    pokey.adapters.worker.connectSandbox(pokey);
   }
 }
 

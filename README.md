@@ -25,6 +25,10 @@ Look at app/main.js and app/external.js and app/index.html and app/external.html
 
 - worker adapter
 
+- doc services, example
+
+- wiretap example
+
 ### MORE EXAMPLES FORTHCOMING
 
 inspired by oasis.js, with some changes + moved to ES6 

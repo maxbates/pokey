@@ -32,33 +32,6 @@ class AdapterBase {
     return channel;
   }
 
-  //todo - signature update
-  connectSandbox (receiver, pokey) {
-    let adapter = this;
-
-    //todo - consistency in event data 
-    function initializePokeySandbox (event) {
-      if (!event.data.isPokeyInitialization) {
-        return;
-      }
-
-      receiver.removeEventListener('message', initializePokeySandbox);
-      adapter.initializePokeySandbox(event, pokey);
-    }
-
-    receiver.addEventListener('message', initializePokeySandbox);
-
-    adapter.pokeyLoaded(pokey);
-  }
-
-  initializePokeySandbox (event, pokey) {
-    let adapter = this;
-    pokey.configuration.eventCallback(function () {
-      pokey.connectCapabilities(event.data.capabilities, event.ports);
-      adapter.didConnect(pokey);
-    });
-  }
-
   //inherited, not static
   environmentPort (sandbox, channel) {
     return channel.port1;
@@ -81,6 +54,46 @@ class AdapterBase {
       capabilities         : sandbox._capabilitiesToConnect
     };
   }
+
+  /*
+  Sandbox API
+  These methods are called from the sandbox, not the hosting environment
+   */
+
+  //subclasses may just delegate to this, in their own context
+  connectSandbox (receiver, pokey) {
+    let adapter = this;
+
+    //todo - consistency in event data
+    function initializePokeySandbox (event) {
+      if (!event.data.isPokeyInitialization) {
+        return;
+      }
+
+      receiver.removeEventListener('message', initializePokeySandbox);
+      adapter.initializePokeySandbox(event, pokey);
+    }
+
+    receiver.addEventListener('message', initializePokeySandbox);
+
+    adapter.pokeyLoaded(pokey);
+  }
+
+  initializePokeySandbox (event, pokey) {
+    let adapter = this;
+    pokey.configuration.eventCallback(function () {
+      pokey.connectCapabilities(event.data.capabilities, event.ports);
+      adapter.didConnect(pokey);
+    });
+  }
+
+  // subclasses should implement
+  // called when pokey has loaded (completed initial setup), send message to start handshake (trigger pokeyLoadHandler)
+  pokeyLoaded () {}
+
+  // subclasses should implement
+  // called after capabilities connected, send message back to complete handshake (trigger initializationHandler)
+  didConnect () {}
 }
 
 Object.assign(AdapterBase.prototype, {

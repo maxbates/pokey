@@ -18,9 +18,9 @@ class AdapterIFrame extends AdapterBase {
   /**
    * For the iFrame, we:
    * (1) create the iFrame, and register it on sandbox.el
-   * (2) set up listeners:
+   * (2) set up listeners (see handshake doc)
    *    (1) error handler
-   *    (2) loaded event for handshake (see handshake doc)
+   *    (2) loaded event
    *    (3) initialize event
    * @param sandbox
    */
@@ -119,8 +119,9 @@ class AdapterIFrame extends AdapterBase {
     window.addEventListener('message', iframe.pokeyLoadHandler);
   }
 
+  //programmatically start sandbox e.g. for testing
   //generally, you want to attach the iFrame yourself, because when moved in the DOM, the iFrame is reloaded
-  static startSandbox (sandbox, options) {
+  startSandbox (sandbox, options) {
     var head = document.head || document.documentElement.getElementsByTagName('head')[0];
     head.appendChild(sandbox.el);
   }
@@ -145,12 +146,13 @@ class AdapterIFrame extends AdapterBase {
   }
 
   connectPorts (sandbox, ports) {
-    var rawPorts = ports.map((port) => port.port),
+    let rawPorts = ports.map((port) => port.port),
         message  = this.createInitializationMessage(sandbox);
 
     if (sandbox.terminated) {
       return;
     }
+
     sandbox.el.contentWindow.postMessage(message, '*', rawPorts);
   }
 

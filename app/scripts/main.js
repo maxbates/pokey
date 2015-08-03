@@ -11,21 +11,25 @@ function addLogStatement (statement) {
 
 addLogStatement('initialized');
 
+let myColor = '#' + (Math.random()*(1<<24)|0).toString(16).slice(-6);
+
 /**********
  SANDBOXING
  **********/
 
-var sandbox = pokey.createSandbox({
+/////// iFrame ////////
+
+let sandbox = pokey.createSandbox({
   url         : 'http://127.0.0.1:3000/external.html',
   type        : 'iframe',
   capabilities: ['interaction', 'colorChannel'],
   height: "500"
 });
 
-sandbox.connect('colorChannel').then(function (port) {
+sandbox.connect('colorChannel').then((port) => {
   addLogStatement('connected on colorChannel');
 
-  port.send('color', '#' + (Math.random()*(1<<24)|0).toString(16).slice(-6));
+  port.send('color', myColor);
 });
 
 sandbox.connect('interaction').then(function (port) {
@@ -47,3 +51,15 @@ sandbox.connect('interaction').then(function (port) {
 
 //inserting in the DOM actually gets the iFrame going + loads external Pokey client to being handshake
 document.getElementById('insertion').appendChild(sandbox.el);
+
+//////web worker //////
+// note that workers must be from the same origin. To use a cross-origin worker, you need to load it into an iFrame.
+let workerSandbox = pokey.createSandbox({
+  url         : 'remoteWorker.js',
+  type: 'worker',
+  capabilities: ['colorChannel']
+});
+
+workerSandbox.connect('colorChannel').then((port) => {
+  port.send('workerColor', myColor);
+});

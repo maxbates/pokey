@@ -4,8 +4,9 @@ import Port from './port';
 //map sandbox.type to adapter name
 let typeToAdapterNameMap = {
   html  : 'iframe',
-  iframe: 'iframe'
-  //worker : 'worker' //todo in the future
+  iframe: 'iframe',
+  worker: 'worker',
+  js    : 'worker'
 };
 
 class Sandbox {
@@ -168,7 +169,7 @@ class Sandbox {
 
   connect (capability) {
     let portDeferred = this.envPortDeferreds[capability] || {},
-        portPromise = portDeferred.promise;
+        portPromise  = portDeferred.promise;
 
     return portPromise || Promise.reject("Connect was called on '" + capability + "' but no such capability was registered.");
   }

@@ -295,36 +295,6 @@ var AdapterBase = (function () {
       return channel;
     }
 
-    //todo - signature update
-  }, {
-    key: 'connectSandbox',
-    value: function connectSandbox(receiver, pokey) {
-      var adapter = this;
-
-      //todo - consistency in event data
-      function initializePokeySandbox(event) {
-        if (!event.data.isPokeyInitialization) {
-          return;
-        }
-
-        receiver.removeEventListener('message', initializePokeySandbox);
-        adapter.initializePokeySandbox(event, pokey);
-      }
-
-      receiver.addEventListener('message', initializePokeySandbox);
-
-      adapter.pokeyLoaded(pokey);
-    }
-  }, {
-    key: 'initializePokeySandbox',
-    value: function initializePokeySandbox(event, pokey) {
-      var adapter = this;
-      pokey.configuration.eventCallback(function () {
-        pokey.connectCapabilities(event.data.capabilities, event.ports);
-        adapter.didConnect(pokey);
-      });
-    }
-
     //inherited, not static
   }, {
     key: 'environmentPort',
@@ -355,6 +325,53 @@ var AdapterBase = (function () {
         capabilities: sandbox._capabilitiesToConnect
       };
     }
+
+    /*
+    Sandbox API
+    These methods are called from the sandbox, not the hosting environment
+     */
+
+    //subclasses may just delegate to this, in their own context
+  }, {
+    key: 'connectSandbox',
+    value: function connectSandbox(receiver, pokey) {
+      var adapter = this;
+
+      //todo - consistency in event data
+      function initializePokeySandbox(event) {
+        if (!event.data.isPokeyInitialization) {
+          return;
+        }
+
+        receiver.removeEventListener('message', initializePokeySandbox);
+        adapter.initializePokeySandbox(event, pokey);
+      }
+
+      receiver.addEventListener('message', initializePokeySandbox);
+
+      adapter.pokeyLoaded(pokey);
+    }
+  }, {
+    key: 'initializePokeySandbox',
+    value: function initializePokeySandbox(event, pokey) {
+      var adapter = this;
+      pokey.configuration.eventCallback(function () {
+        pokey.connectCapabilities(event.data.capabilities, event.ports);
+        adapter.didConnect(pokey);
+      });
+    }
+
+    // subclasses should implement
+    // called when pokey has loaded (completed initial setup), send message to start handshake (trigger pokeyLoadHandler)
+  }, {
+    key: 'pokeyLoaded',
+    value: function pokeyLoaded() {}
+
+    // subclasses should implement
+    // called after capabilities connected, send message back to complete handshake (trigger initializationHandler)
+  }, {
+    key: 'didConnect',
+    value: function didConnect() {}
   }]);
 
   return AdapterBase;
@@ -371,7 +388,7 @@ Object.assign(AdapterBase.prototype, {
 exports['default'] = AdapterBase;
 module.exports = exports['default'];
 
-},{"./channel":4,"./utils":10}],3:[function(require,module,exports){
+},{"./channel":5,"./utils":11}],3:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -414,9 +431,9 @@ var AdapterIFrame = (function (_AdapterBase) {
     /**
      * For the iFrame, we:
      * (1) create the iFrame, and register it on sandbox.el
-     * (2) set up listeners:
+     * (2) set up listeners (see handshake doc)
      *    (1) error handler
-     *    (2) loaded event for handshake (see handshake doc)
+     *    (2) loaded event
      *    (3) initialize event
      * @param sandbox
      */
@@ -515,7 +532,14 @@ var AdapterIFrame = (function (_AdapterBase) {
       window.addEventListener('message', iframe.pokeyLoadHandler);
     }
 
+    //programmatically start sandbox e.g. for testing
     //generally, you want to attach the iFrame yourself, because when moved in the DOM, the iFrame is reloaded
+  }, {
+    key: 'startSandbox',
+    value: function startSandbox(sandbox, options) {
+      var head = document.head || document.documentElement.getElementsByTagName('head')[0];
+      head.appendChild(sandbox.el);
+    }
   }, {
     key: 'connectPorts',
     value: function connectPorts(sandbox, ports) {
@@ -527,6 +551,7 @@ var AdapterIFrame = (function (_AdapterBase) {
       if (sandbox.terminated) {
         return;
       }
+
       sandbox.el.contentWindow.postMessage(message, '*', rawPorts);
     }
 
@@ -554,12 +579,6 @@ var AdapterIFrame = (function (_AdapterBase) {
     key: 'name',
     value: function name(sandbox) {
       return sandbox.el.name;
-    }
-  }, {
-    key: 'startSandbox',
-    value: function startSandbox(sandbox, options) {
-      var head = document.head || document.documentElement.getElementsByTagName('head')[0];
-      head.appendChild(sandbox.el);
     }
   }, {
     key: 'terminateSandbox',
@@ -633,7 +652,161 @@ function verifyCurrentSandboxOrigin(sandbox, event) {
 exports['default'] = AdapterIFrame;
 module.exports = exports['default'];
 
-},{"./adapter_base":2,"./utils":10}],4:[function(require,module,exports){
+},{"./adapter_base":2,"./utils":11}],4:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+  value: true
+});
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; desc = parent = getter = undefined; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; continue _function; } } else if ('value' in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== 'function' && superClass !== null) { throw new TypeError('Super expression must either be null or a function, not ' + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var _utils = require('./utils');
+
+var _adapter_base = require('./adapter_base');
+
+// note that workers must be from the same origin. To use a cross-origin worker, you need to load it into an iFrame, or create an intermediate worker and load the remote worker as a Blob (won't work in all browsers)
+
+var _adapter_base2 = _interopRequireDefault(_adapter_base);
+
+var AdapterWorker = (function (_AdapterBase) {
+  _inherits(AdapterWorker, _AdapterBase);
+
+  function AdapterWorker() {
+    _classCallCheck(this, AdapterWorker);
+
+    _get(Object.getPrototypeOf(AdapterWorker.prototype), 'constructor', this).call(this);
+  }
+
+  /*
+  Environment
+  Methods called by the hosting environment
+   */
+
+  /**
+   * For the Worker, we:
+   * (1) create the Worker
+   * (2) set up listeners (see handshake doc)
+   *    (1) error handler
+   *    (2) loaded event
+   *    (3) initialize event
+   * @param sandbox
+   */
+
+  _createClass(AdapterWorker, [{
+    key: 'initializeSandbox',
+    value: function initializeSandbox(sandbox) {
+      var worker = new Worker(sandbox.options.url);
+      worker.name = sandbox.options.url + '?uuid=' + (0, _utils.UUID)();
+      sandbox.worker = worker;
+
+      // Error handling inside the worker
+      worker.errorHandler = function (event) {
+        if (!event.data.sandboxException) {
+          return;
+        }
+
+        sandbox.onerror(event.data.sandboxException);
+      };
+      worker.addEventListener('message', worker.errorHandler);
+
+      sandbox.loadDeferred.resolve(new Promise(function (resolve, reject) {
+        worker.initializationHandler = function (event) {
+          sandbox.pokey.configuration.eventCallback(function () {
+            if (event.data !== sandbox.adapter.sandboxInitializedMessage) {
+              return;
+            }
+            worker.removeEventListener('message', worker.initializationHandler);
+
+            resolve(sandbox);
+          });
+        };
+        worker.addEventListener('message', worker.initializationHandler);
+      }));
+
+      worker.loadHandler = function (event) {
+        sandbox.pokey.configuration.eventCallback(function () {
+          if (event.data !== sandbox.adapter.pokeyLoadedMessage) {
+            return;
+          }
+          //worker sandbox initialized
+
+          worker.removeEventListener('message', worker.loadHandler);
+          sandbox.createAndTransferCapabilities();
+        });
+      };
+      worker.addEventListener('message', worker.loadHandler);
+    }
+
+    //e.g. for testing
+  }, {
+    key: 'startSandbox',
+    value: function startSandbox() {}
+  }, {
+    key: 'terminateSandbox',
+    value: function terminateSandbox(sandbox) {
+      var worker = sandbox.worker;
+
+      sandbox.terminated = true;
+
+      worker.removeEventListener('message', worker.loadHandler);
+      worker.removeEventListener('message', worker.initializationHandler);
+
+      sandbox.worker.terminate();
+    }
+  }, {
+    key: 'connectPorts',
+    value: function connectPorts(sandbox, ports) {
+      var rawPorts = ports.map(function (port) {
+        return port.port;
+      }),
+          message = this.createInitializationMessage(sandbox);
+
+      if (sandbox.terminated) {
+        return;
+      }
+
+      sandbox.worker.postMessage(message, rawPorts);
+    }
+
+    /*
+    Sandbox API
+    These methods are called from the sandbox, not the hosting environment
+     */
+
+  }, {
+    key: 'connectSandbox',
+    value: function connectSandbox(pokey) {
+      //'self' for Worker context
+      return _adapter_base2['default'].prototype.connectSandbox.call(this, self, pokey);
+    }
+  }, {
+    key: 'pokeyLoaded',
+    value: function pokeyLoaded() {
+      postMessage(this.pokeyLoadedMessage, []);
+    }
+  }, {
+    key: 'didConnect',
+    value: function didConnect() {
+      postMessage(this.sandboxInitializedMessage, []);
+    }
+  }]);
+
+  return AdapterWorker;
+})(_adapter_base2['default']);
+
+exports['default'] = AdapterWorker;
+module.exports = exports['default'];
+
+},{"./adapter_base":2,"./utils":11}],5:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -685,7 +858,7 @@ var Channel = (function () {
 exports['default'] = Channel;
 module.exports = exports['default'];
 
-},{"./port":7,"./utils":10}],5:[function(require,module,exports){
+},{"./port":8,"./utils":11}],6:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -846,7 +1019,7 @@ function connectConsumers(pokey, consumers) {
   }
 }
 
-},{"./Port":1,"./utils":10}],6:[function(require,module,exports){
+},{"./Port":1,"./utils":11}],7:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -869,6 +1042,10 @@ var _sandbox = require('./sandbox');
 var _sandbox2 = _interopRequireDefault(_sandbox);
 
 var _connect = require('./connect');
+
+var _adapter_worker = require('./adapter_worker');
+
+var _adapter_worker2 = _interopRequireDefault(_adapter_worker);
 
 var _adapter_iframe = require('./adapter_iframe');
 
@@ -907,17 +1084,17 @@ var Pokey = (function () {
     }, options);
 
     this.adapters = {
-      iframe: new _adapter_iframe2['default']()
+      iframe: new _adapter_iframe2['default'](),
+      worker: new _adapter_worker2['default']()
 
-      //in a future version...
-      //webworker: new WebworkerAdapter(),
-      //inline: new InlineAdapter()
+      //in a future version maybe ... inline not secure though
+      //inline: new AdapterInline()
     };
 
     this.onCreate();
   }
 
-  //noop for now, but can be extended
+  //noop for now, can be extended
 
   _createClass(Pokey, [{
     key: 'onCreate',
@@ -955,21 +1132,25 @@ exports['default'] = Pokey;
 
 /****** auto initialization *****/
 
-//todo - encapsulate to allow multiple instances on page (should pass this into connectSandbox)
-
-window.pokey = global.pokey = new Pokey();
-
 /* in sandboxes, we want to automatically start things up to continue handshake process */
 function autoInitializeSandbox() {
   if (typeof window !== 'undefined') {
+
+    //expose on window
+    //todo - encapsulate to allow multiple instances on page (should pass this into connectSandbox)
+    window.pokey = global.pokey = new Pokey();
+
     //in the future, could handle inline workers here
 
     if (window.parent && window.parent !== window) {
       pokey.adapters.iframe.connectSandbox(pokey);
     }
   } else {
+
+    self.pokey = new Pokey();
+
     //handle web workers
-    pokey.adapters.webworker.connectSandbox(pokey);
+    pokey.adapters.worker.connectSandbox(pokey);
   }
 }
 
@@ -978,7 +1159,7 @@ module.exports = exports['default'];
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./adapter_iframe":3,"./connect":5,"./sandbox":8,"./service":9}],7:[function(require,module,exports){
+},{"./adapter_iframe":3,"./adapter_worker":4,"./connect":6,"./sandbox":9,"./service":10}],8:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1217,7 +1398,7 @@ function getRequestId(pokey) {
 exports['default'] = Port;
 module.exports = exports['default'];
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1240,8 +1421,9 @@ var _port2 = _interopRequireDefault(_port);
 
 var typeToAdapterNameMap = {
   html: 'iframe',
-  iframe: 'iframe'
-  //worker : 'worker' //todo in the future
+  iframe: 'iframe',
+  worker: 'worker',
+  js: 'worker'
 };
 
 var Sandbox = (function () {
@@ -1472,7 +1654,7 @@ var Sandbox = (function () {
 exports['default'] = Sandbox;
 module.exports = exports['default'];
 
-},{"./port":7,"./utils":10}],9:[function(require,module,exports){
+},{"./port":8,"./utils":11}],10:[function(require,module,exports){
 /**
  Base class services (in containing environment) + consumers (in sandbox) can subclass to implement several events + requests
 
@@ -1592,7 +1774,7 @@ var Service = (function () {
 exports["default"] = Service;
 module.exports = exports["default"];
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -1681,7 +1863,7 @@ function defer(deferred) {
   return deferred;
 }
 
-},{}]},{},[6])
+},{}]},{},[7])
 
 
 //# sourceMappingURL=../../app/scripts/pokey.js.map
